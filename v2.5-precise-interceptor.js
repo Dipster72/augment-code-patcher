@@ -149,7 +149,7 @@
 
     // v2.5改进：更精确的拦截模式分类
     const TELEMETRY_PATTERNS = [
-        "report-feature-vector",    // 特征向量报告
+        // "report-feature-vector",    // 特征向量报告
         "record-session-events",    // 会话事件记录
         "report-error",            // 错误报告
         "client-metrics",          // 客户端指标
@@ -178,7 +178,7 @@
     // 精确遥测端点模式（高优先级拦截）
     const PRECISE_TELEMETRY_ENDPOINTS = [
         "/record-session-events",      // 会话事件记录端点
-        "/report-feature-vector",      // 特征向量报告端点
+        // "/report-feature-vector",      // 特征向量报告端点
         "/record-request-events",      // 请求事件记录端点
         "/record-user-events",         // 用户操作事件端点
         "/record-preference-sample",   // 用户偏好数据端点
@@ -199,11 +199,12 @@
 
     // 必要端点白名单（最高优先级保护）
     const ESSENTIAL_ENDPOINTS = [
+        "/report-feature-vector",      // 特征向量报告端点
         "batch-upload",           // 代码库索引上传
         "memorize",              // 记忆功能
         "completion",            // 代码补全
         "chat-stream",           // 聊天流
-        //"subscription-info",     // 订阅信息
+        "subscription-info",     // 订阅信息
         "get-models",           // 获取模型列表
         "token",                // 令牌相关
         "codebase-retrieval",   // 代码库检索
@@ -246,7 +247,7 @@
         '_nextEditResolutionReporter',
         '_onboardingSessionEventReporter',
         '_completionTimelineReporter',
-        '_featureVectorReporter'
+        // '_featureVectorReporter'
     ];
 
     // 增强的拦截模式
@@ -1390,7 +1391,7 @@
             // 遥测相关的错误模式（应该被拦截）
             const telemetryErrorPatterns = [
                 'analytics', 'telemetry', 'tracking', 'metrics',
-                'segment', 'feature-vector', 'user-behavior',
+                'segment',  'user-behavior', //'feature-vector',
                 'session-events', 'client-metrics'
             ];
 
