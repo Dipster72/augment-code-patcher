@@ -50,18 +50,6 @@
             }
         }
 
-        query(category, action, details = '') {
-            if (this.enabled) {
-                console.log(this._formatMessage('🔍', category, action, details));
-            }
-        }
-
-        fileOp(category, action, details = '') {
-            if (this.enabled) {
-                console.log(this._formatMessage('📁', category, action, details));
-            }
-        }
-
         protect(category, action, details = '') {
             if (this.enabled) {
                 console.log(this._formatMessage('🛡️', category, action, details));
@@ -88,6 +76,24 @@
                 const formatted = `❌ [${module}] ${message}${data ? ' - ' + data : ''}`;
                 console.error(formatted);
             }
+        }
+
+        // 硬件查询详细日志方法
+        hardwareQueryReplace(command, realData, fakeData, commandType = '硬件查询') {
+            if (this.enabled) {
+                console.log(`🔄 [系统命令] exec() ${commandType}替换`);
+                console.log(`📝 原始命令: ${command}`);
+                console.log(`📊 真实数据: ${this._truncateData(realData)}`);
+                console.log(`🎭 伪造数据: ${this._truncateData(fakeData)}`);
+            }
+        }
+
+        // 数据截断辅助方法，避免日志过长
+        _truncateData(data, maxLength = 500) {
+            if (!data) return '(无数据)';
+            const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+            if (dataStr.length <= maxLength) return dataStr;
+            return dataStr.substring(0, maxLength) + '...(已截断)';
         }
 
         // 简单开关控制
@@ -314,14 +320,11 @@
                     }
                 },
                 
-                // 软件环境 (6个)
+                // 软件环境 (3个) - 保留真实Node/NPM/Extension版本，只伪造VSCode版本和系统时间
                 software: {
-                    vscode: '1.85.2',
-                    node: process.version || 'v18.17.0',
-                    npm: '9.6.7',
+                    vscodeVersion: this.generateVSCodeVersion(),
                     systemBootTime: Date.now() - Math.floor(Math.random() * 86400000),
-                    processStartTime: Date.now() - Math.floor(Math.random() * 3600000),
-                    extensionVersion: '0.525.0'
+                    processStartTime: Date.now() - Math.floor(Math.random() * 3600000)
                 },
 
                 // Git配置信息
@@ -341,6 +344,14 @@
                     config: this.generateFakeSSHConfig(profileSeed)
                 }
             };
+        }
+
+        generateVSCodeVersion() {
+            // 生成 1.[100-103].[0-3] 格式的版本号
+            const major = 1;
+            const minor = 100 + Math.floor(Math.random() * 4); // 100-103
+            const patch = Math.floor(Math.random() * 4); // 0-3
+            return `${major}.${minor}.${patch}`;
         }
 
         generateMacAddress(seed) {
@@ -697,7 +708,7 @@ Host *
                 virtualHost: ''
             };
 
-            logger.query('系统信息', 'system() 调用', `${systemInfo.manufacturer} ${systemInfo.model}`);
+            logger.replace('系统信息', 'system() 调用', `${systemInfo.manufacturer} ${systemInfo.model}`);
 
             return systemInfo;
         }
@@ -712,7 +723,7 @@ Host *
                 serial: this.profile.hardware.biosInfo.serial
             };
 
-            logger.query('系统信息', 'bios() 调用', `${biosInfo.vendor} ${biosInfo.version}`);
+            logger.replace('系统信息', 'bios() 调用', `${biosInfo.vendor} ${biosInfo.version}`);
 
             return biosInfo;
         }
@@ -769,14 +780,14 @@ Host *
                 }
             };
 
-            logger.query('系统信息', 'cpu() 调用', `${cpuInfo.manufacturer} ${cpuInfo.cores}核 ${cpuInfo.speed}GHz`);
+            logger.replace('系统信息', 'cpu() 调用', `${cpuInfo.manufacturer} ${cpuInfo.cores}核 ${cpuInfo.speed}GHz`);
 
             return cpuInfo;
         }
 
         generateCpuFlags() {
             const flags = this.selectedTemplate.cpu.flags;
-            logger.query('系统信息', 'cpuFlags() 调用', `${flags.split(' ').length}个CPU标志`);
+            logger.replace('系统信息', 'cpuFlags() 调用', `${flags.split(' ').length}个CPU标志`);
             return flags;
         }
 
@@ -800,7 +811,7 @@ Host *
 
             const totalGB = Math.round(memoryInfo.total / 1024 / 1024 / 1024);
             const usagePercent = Math.round((memoryInfo.used / memoryInfo.total) * 100);
-            logger.query('系统信息', 'mem() 调用', `${totalGB}GB内存 ${usagePercent}%使用`);
+            logger.replace('系统信息', 'mem() 调用', `${totalGB}GB内存 ${usagePercent}%使用`);
 
             return memoryInfo;
         }
@@ -978,15 +989,15 @@ Host *
                     macs: self.profile.hardware.macAddresses
                 })),
 
-                // 版本信息
+                // 版本信息 - 保留真实Node/NPM版本
                 versions: (callback) => this.handleCallback(callback, () => ({
                     kernel: self.profile.system.kernelVersion,
                     openssl: '1.1.1f',
                     systemOpenssl: '1.1.1f',
                     systemOpensslLib: 'OpenSSL 1.1.1f',
-                    node: self.profile.software.node,
+                    node: process.version || 'v18.17.0',
                     v8: '9.4.146.24-node.20',
-                    npm: self.profile.software.npm,
+                    npm: '9.6.7', // 保留常见版本，不影响功能
                     yarn: '1.22.19',
                     pm2: '5.2.2',
                     gulp: '4.0.2',
@@ -1190,7 +1201,7 @@ Host *
                                 }
 
                                 if (inodeReplaced) {
-                                    logger.fileOp('文件系统', `${prop}() inode替换`, `${replacementType}: ${pathStr}`);
+                                    logger.replace('文件系统', `${prop}() inode替换`, `${replacementType}: ${pathStr}`);
                                 }
                             }
 
@@ -1207,7 +1218,7 @@ Host *
                             if (pathStr.includes('.ssh') || pathStr.includes('known_hosts') || pathStr.includes('id_rsa')) {
                                 const fakeContent = self.generateFakeSSHContent(pathStr);
                                 const fileType = self.getSSHFileType(pathStr);
-                                logger.intercept('文件系统', `SSH文件访问拦截 - 替换为伪造${fileType}`, pathStr);
+                                logger.replace('文件系统', `SSH文件访问拦截 - 替换为伪造${fileType}`, pathStr);
 
                                 if (prop === 'readFileSync') {
                                     return Buffer.from(fakeContent);
@@ -1320,26 +1331,32 @@ Host *
                             const analysis = self.analyzeCommand(command);
 
                             if (analysis.isHardwareQuery) {
-                                const logMessage = self.getDetailedLogMessage(analysis, command);
-                                logger.intercept('系统命令', `exec() ${logMessage.action}`, logMessage.details);
-
                                 // 处理回调参数
                                 if (typeof options === 'function') {
                                     callback = options;
                                     options = {};
                                 }
 
-                                // 生成伪造的输出
-                                const fakeOutput = self.generateFakeOutput(analysis);
+                                // 先执行真实命令获取真实数据
+                                const originalExec = target[prop].bind(target);
 
-                                // 异步返回伪造结果
-                                setTimeout(() => {
+                                return originalExec(command, options, (error, stdout, stderr) => {
+                                    // 生成伪造的输出
+                                    const fakeOutput = self.generateFakeOutput(analysis);
+
+                                    // 使用新的详细日志格式
+                                    logger.hardwareQueryReplace(
+                                        command,
+                                        stdout || (error ? error.message : '(执行失败)'),
+                                        fakeOutput,
+                                        analysis.type
+                                    );
+
+                                    // 返回伪造结果
                                     if (callback) {
-                                        callback(null, fakeOutput, '');
+                                        callback(null, fakeOutput, stderr);
                                     }
-                                }, 10);
-
-                                return;
+                                });
                             }
 
                             // 非硬件查询命令正常执行
@@ -1354,7 +1371,7 @@ Host *
 
                             if (analysis.isHardwareQuery) {
                                 const logMessage = self.getDetailedLogMessage(analysis, fullCommand);
-                                logger.intercept('系统命令', `spawn() ${logMessage.action}`, logMessage.details);
+                                logger.replace('系统命令', `spawn() ${logMessage.action}`, logMessage.details);
 
                                 // 返回模拟的子进程
                                 return self.createMockChildProcess(analysis);
@@ -1407,8 +1424,15 @@ Host *
                 }
             }
 
-            // Windows Registry 查询
-            if (cmd.includes('reg query') && cmd.includes('hardware')) {
+            // Windows Registry 查询 - 扩展检测范围
+            if (cmd.includes('reg query') && (
+                cmd.includes('hardware') ||
+                cmd.includes('machineguid') ||
+                cmd.includes('cryptography') ||
+                cmd.includes('centralprocessor') ||
+                cmd.includes('bios') ||
+                cmd.includes('baseboard')
+            )) {
                 return { isHardwareQuery: true, type: '注册表硬件查询', command };
             }
 
@@ -1450,7 +1474,7 @@ Host *
                 case '显示器信息':
                     return this.generateFakeMonitorOutput(template);
                 case '注册表硬件查询':
-                    return this.generateFakeRegistryOutput(template);
+                    return this.generateFakeRegistryOutput(analysis);
                 default:
                     return '';
             }
@@ -1500,9 +1524,39 @@ UserFriendlyName: ${template.display?.name || 'Dell U2720Q'}
 SerialNumberID  : ${displaySerial}`;
         }
 
-        generateFakeRegistryOutput(template) {
-            return `FeatureSet    REG_DWORD    0x12345678
-ProcessorNameString    REG_SZ    ${template.cpu.brand}`;
+        generateFakeRegistryOutput(analysis) {
+            const template = this.hardware.selectedTemplate;
+            const command = analysis.command.toLowerCase();
+
+            // 根据具体的注册表查询命令生成相应的伪造数据
+            if (command.includes('hardware\\description\\system\\centralprocessor')) {
+                return `HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0
+    ProcessorNameString    REG_SZ    ${template.cpu.brand}
+    VendorIdentifier    REG_SZ    ${template.cpu.manufacturer}
+    Identifier    REG_SZ    x86 Family ${template.cpu.family} Model ${template.cpu.model} Stepping ${template.cpu.stepping}
+    FeatureSet    REG_DWORD    0x${Math.random().toString(16).substr(2, 8)}
+    ~MHz    REG_DWORD    0x${Math.floor(template.cpu.speed * 1000).toString(16)}`;
+            }
+
+            if (command.includes('hardware\\description\\system\\bios')) {
+                return `HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS
+    BIOSVendor    REG_SZ    ${template.bios.vendor}
+    BIOSVersion    REG_SZ    ${template.bios.version}
+    BIOSReleaseDate    REG_SZ    ${template.bios.releaseDate}
+    SystemManufacturer    REG_SZ    ${template.baseboard.manufacturer}
+    SystemProductName    REG_SZ    ${template.baseboard.model}`;
+            }
+
+            if (command.includes('machineguid') || command.includes('cryptography')) {
+                const fakeGuid = this.profile.identifiers.machineId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+                return `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography
+    MachineGuid    REG_SZ    {${fakeGuid}}`;
+            }
+
+            // 默认通用注册表输出
+            return `FeatureSet    REG_DWORD    0x${Math.random().toString(16).substr(2, 8)}
+ProcessorNameString    REG_SZ    ${template.cpu.brand}
+VendorIdentifier    REG_SZ    ${template.cpu.manufacturer}`;
         }
 
         createMockChildProcess(analysis) {
@@ -1591,44 +1645,200 @@ CPU MHz:             ${template.cpu.speed}`;
         }
 
         getDetailedLogMessage(analysis, command) {
-            const shortCommand = command.length > 50 ? command.substring(0, 50) + '...' : command;
+            // 不再截断命令，显示完整命令
+            const fullCommand = command;
 
             switch (analysis.type) {
                 case 'Git用户信息':
                     return {
-                        action: 'Git用户信息拦截 - 返回伪造身份',
-                        details: `${shortCommand} → 返回: ${this.profile.git.userName}/${this.profile.git.userEmail}`
+                        action: 'Git用户信息替换',
+                        details: `${fullCommand} → 返回伪造身份: ${this.profile.git.userName}/${this.profile.git.userEmail}`
                     };
                 case 'Git仓库信息':
                     return {
-                        action: 'Git仓库信息拦截 - 返回伪造仓库',
-                        details: `${shortCommand} → 返回: ${this.profile.git.defaultRemoteUrl}`
+                        action: 'Git仓库信息替换',
+                        details: `${fullCommand} → 返回伪造仓库: ${this.profile.git.defaultRemoteUrl}`
+                    };
+                case '注册表硬件查询':
+                    return {
+                        action: '注册表硬件查询替换',
+                        details: `${fullCommand} → 返回伪造注册表数据`
                     };
                 case 'macOS硬件查询':
                     return {
-                        action: 'macOS硬件查询拦截 - 返回伪造UUID',
-                        details: `${shortCommand} → 返回伪造IOPlatformUUID: ${this.profile.identifiers.machineId.substr(0, 8)}...`
+                        action: 'macOS硬件查询替换',
+                        details: `${fullCommand} → 返回伪造IOPlatformUUID: ${this.profile.identifiers.machineId.substring(0, 8)}...`
                     };
                 case 'Windows系统信息':
                     return {
-                        action: 'Windows系统信息拦截 - 返回伪造配置',
-                        details: `${shortCommand} → 返回伪造主机名: ${this.profile.system.hostname}`
+                        action: 'Windows系统信息替换',
+                        details: `${fullCommand} → 返回伪造主机名: ${this.profile.system.hostname}`
                     };
                 case 'Linux硬件查询':
                     return {
-                        action: 'Linux硬件查询拦截 - 返回伪造硬件',
-                        details: `${shortCommand} → 返回伪造CPU信息`
+                        action: 'Linux硬件查询替换',
+                        details: `${fullCommand} → 返回伪造CPU信息`
                     };
                 default:
                     return {
-                        action: '硬件查询拦截',
-                        details: `${analysis.type}: ${shortCommand}`
+                        action: '硬件查询替换',
+                        details: `${analysis.type}: ${fullCommand} → 返回伪造数据`
                     };
             }
         }
     }
 
-    // ==================== 7. 网络拦截器 ====================
+    // ==================== 7. VSCode拦截器 ====================
+
+    class VSCodeInterceptor {
+        constructor(identityProfile) {
+            this.profile = identityProfile;
+            this.setupInterceptor();
+        }
+
+        setupInterceptor() {
+            try {
+                const Module = require('module');
+                const originalRequire = Module.prototype.require;
+                const self = this;
+
+                Module.prototype.require = function(id) {
+                    if (id === 'vscode') {
+                        try {
+                            const vscodeModule = originalRequire.apply(this, arguments);
+                            if (vscodeModule && typeof vscodeModule === 'object') {
+                                logger.protect('VSCode拦截', 'VSCode模块加载拦截');
+                                return self.createVSCodeProxy(vscodeModule);
+                            }
+                            return vscodeModule;
+                        } catch (e) {
+                            logger.protect('VSCode拦截', 'VSCode模块不可用，提供模拟对象');
+                            return self.createMockVSCode();
+                        }
+                    }
+                    return originalRequire.apply(this, arguments);
+                };
+
+                logger.protect('VSCode拦截', 'VSCode拦截器设置完成');
+            } catch (e) {
+                logger.error('VSCode', 'VSCode拦截器设置失败', e.message);
+            }
+        }
+
+        createVSCodeProxy(vscodeModule) {
+            const self = this;
+
+            return new Proxy(vscodeModule, {
+                get(target, prop) {
+                    // 拦截version属性
+                    if (prop === 'version') {
+                        const originalVersion = target[prop];
+                        const fakeVersion = self.profile.software.vscodeVersion;
+                        logger.replace('VSCode拦截', 'version属性访问', `${originalVersion} → ${fakeVersion}`);
+                        return fakeVersion;
+                    }
+
+                    // 拦截env对象
+                    if (prop === 'env') {
+                        const originalEnv = target[prop];
+                        if (originalEnv && typeof originalEnv === 'object') {
+                            return self.createEnvProxy(originalEnv);
+                        }
+                        return originalEnv;
+                    }
+
+                    return Reflect.get(target, prop);
+                }
+            });
+        }
+
+        createEnvProxy(originalEnv) {
+            const self = this;
+
+            return new Proxy(originalEnv, {
+                get(target, prop) {
+                    // 替换机器ID
+                    if (prop === 'machineId') {
+                        const originalValue = Reflect.get(target, prop);
+                        const fakeValue = self.profile.identifiers.machineId;
+                        logger.replace('VSCode拦截', 'machineId访问', `${originalValue} → ${fakeValue.substr(0, 8)}...`);
+                        return fakeValue;
+                    }
+
+                    // 替换会话ID
+                    if (prop === 'sessionId') {
+                        const originalValue = Reflect.get(target, prop);
+                        const fakeValue = self.profile.identifiers.sessionId;
+                        logger.replace('VSCode拦截', 'sessionId访问', `${originalValue} → ${fakeValue.substr(0, 8)}...`);
+                        return fakeValue;
+                    }
+
+                    // 强制禁用遥测
+                    if (prop === 'isTelemetryEnabled') {
+                        const originalValue = Reflect.get(target, prop);
+                        logger.replace('VSCode拦截', '遥测状态访问', `${originalValue} → false (强制禁用)`);
+                        return false;
+                    }
+
+                    // 统一语言环境
+                    if (prop === 'language') {
+                        const originalValue = Reflect.get(target, prop);
+                        const fakeValue = self.profile.system.locale;
+                        logger.replace('VSCode拦截', 'language访问', `${originalValue} → ${fakeValue}`);
+                        return fakeValue;
+                    }
+
+                    // 统一URI方案
+                    if (prop === 'uriScheme') {
+                        const originalValue = Reflect.get(target, prop);
+                        const fakeValue = 'vscode';
+                        logger.replace('VSCode拦截', 'uriScheme访问', `${originalValue} → ${fakeValue}`);
+                        return fakeValue;
+                    }
+
+                    return Reflect.get(target, prop);
+                }
+            });
+        }
+
+        createMockVSCode() {
+            return {
+                version: this.profile.software.vscodeVersion,
+                commands: {
+                    registerCommand: () => ({})
+                },
+                window: {
+                    showInformationMessage: () => Promise.resolve(),
+                    showErrorMessage: () => Promise.resolve(),
+                    createOutputChannel: () => ({
+                        appendLine: () => {},
+                        show: () => {},
+                        dispose: () => {}
+                    })
+                },
+                workspace: {
+                    getConfiguration: () => ({
+                        get: () => undefined,
+                        has: () => false,
+                        inspect: () => undefined,
+                        update: () => Promise.resolve()
+                    })
+                },
+                env: new Proxy({}, {
+                    get: (target, prop) => {
+                        if (prop === 'machineId') return this.profile.identifiers.machineId;
+                        if (prop === 'sessionId') return this.profile.identifiers.sessionId;
+                        if (prop === 'isTelemetryEnabled') return false;
+                        if (prop === 'language') return this.profile.system.locale;
+                        if (prop === 'uriScheme') return 'vscode';
+                        return undefined;
+                    }
+                })
+            };
+        }
+    }
+
+    // ==================== 8. 网络请求处理器 ====================
 
     class NetworkInterceptor {
         constructor(identityProfile, networkStrategy) {
@@ -1660,7 +1870,7 @@ CPU MHz:             ${template.cpu.speed}`;
                     case 'INTERCEPT':
                         self.stats.intercepted++;
                         self.stats.total++;
-                        logger.intercept('网络拦截', `${method} ${urlString}`, '遥测数据已拦截');
+                        logger.intercept('网络请求', `${method} ${urlString}`, '遥测数据已拦截');
                         return Promise.resolve({
                             ok: true,
                             status: 200,
@@ -1679,19 +1889,19 @@ CPU MHz:             ${template.cpu.speed}`;
                             self.replaceHeaderIdentity(newOptions.headers);
                         }
 
-                        logger.replace('网络拦截', `${method} ${urlString}`, '身份信息已替换');
+                        logger.replace('网络请求', `${method} ${urlString}`, '身份信息已替换');
                         return originalFetch.call(this, url, newOptions);
 
                     case 'ALLOW':
                     default:
                         self.stats.allowed++;
                         self.stats.total++;
-                        logger.allow('网络拦截', `${method} ${urlString}`, '必要功能已放行');
+                        logger.allow('网络请求', `${method} ${urlString}`, '必要功能已放行');
                         return originalFetch.apply(this, arguments);
                 }
             };
 
-            logger.protect('网络拦截', 'Fetch API拦截已设置');
+            logger.protect('网络请求', 'Fetch API拦截已设置');
         }
 
         interceptXHR() {
@@ -1718,7 +1928,7 @@ CPU MHz:             ${template.cpu.speed}`;
                         case 'INTERCEPT':
                             self.stats.intercepted++;
                             self.stats.total++;
-                            logger.intercept('网络拦截', `${this._method} ${this._url}`, '遥测数据已拦截');
+                            logger.intercept('网络请求', `${this._method} ${this._url}`, '遥测数据已拦截');
 
                             setTimeout(() => {
                                 Object.defineProperty(this, 'readyState', { value: 4, writable: false });
@@ -1732,14 +1942,14 @@ CPU MHz:             ${template.cpu.speed}`;
                             self.stats.replaced++;
                             self.stats.total++;
                             const fakeData = self.strategy.replaceWithFakeIdentity(data);
-                            logger.replace('网络拦截', `${this._method} ${this._url}`, '身份信息已替换');
+                            logger.replace('网络请求', `${this._method} ${this._url}`, '身份信息已替换');
                             return originalSend.call(this, fakeData);
 
                         case 'ALLOW':
                         default:
                             self.stats.allowed++;
                             self.stats.total++;
-                            logger.allow('网络拦截', `${this._method} ${this._url}`, '必要功能已放行');
+                            logger.allow('网络请求', `${this._method} ${this._url}`, '必要功能已放行');
                             return originalSend.apply(this, arguments);
                     }
                 };
@@ -1749,7 +1959,7 @@ CPU MHz:             ${template.cpu.speed}`;
 
             // 保持原型链
             XMLHttpRequest.prototype = originalXHR.prototype;
-            logger.protect('网络拦截', 'XMLHttpRequest拦截已设置');
+            logger.protect('网络请求', 'XMLHttpRequest拦截已设置');
         }
 
         replaceHeaderIdentity(headers) {
@@ -1764,7 +1974,7 @@ CPU MHz:             ${template.cpu.speed}`;
         initializeAll() {
             this.interceptFetch();
             this.interceptXHR();
-            logger.protect('网络拦截', '网络拦截器初始化完成');
+            logger.protect('网络请求', '网络请求处理器初始化完成');
         }
 
         getStats() {
@@ -1776,7 +1986,7 @@ CPU MHz:             ${template.cpu.speed}`;
 
     class CompleteInterceptorManager {
         constructor() {
-            this.version = '3.6-complete';
+            this.version = '1.0.0';
             this.buildTime = new Date().toISOString();
             this.status = 'initializing';
 
@@ -1803,6 +2013,7 @@ CPU MHz:             ${template.cpu.speed}`;
                 // 注意：不再初始化EventReporterInterceptor，让Reporter正常工作以避免账号封禁
                 // this.eventReporterInterceptor = new EventReporterInterceptor(this.currentProfile);
                 this.fileSystemInterceptor = new FileSystemInterceptor(this.currentProfile);
+                this.vscodeInterceptor = new VSCodeInterceptor(this.currentProfile);
                 this.networkInterceptor = new NetworkInterceptor(this.currentProfile, this.networkStrategy);
 
                 this.status = 'running';
@@ -1818,7 +2029,7 @@ CPU MHz:             ${template.cpu.speed}`;
 
         printStatus() {
             console.log('='.repeat(60));
-            console.log('🛡️ Augment Code Extension 完整拦截器');
+            console.log(`🛡️ Augment Code Extension 完整拦截器 v${this.version}`);
             console.log('='.repeat(60));
             console.log(`状态: ${this.status}`);
             console.log(`身份ID: ${this.currentProfile.identifiers.machineId.substr(0, 8)}...`);
@@ -1831,6 +2042,7 @@ CPU MHz:             ${template.cpu.speed}`;
             console.log('✅ 40+ 硬件数据点完全伪造');
             console.log('✅ 智能网络策略已启用');
             console.log('✅ SystemInformation库完全拦截');
+            console.log('✅ VSCode环境变量隐私保护已启用');
             console.log('✅ 文件系统隐私保护已启用');
             console.log('='.repeat(60) + '\n');
         }
@@ -1904,7 +2116,7 @@ CPU MHz:             ${template.cpu.speed}`;
 
     // 导出到全局作用域
     const AugmentCompleteInterceptor = {
-        version: '3.6-complete',
+        version: '1.0.0',
         manager: completeManager,
 
         // 状态方法
@@ -1963,13 +2175,25 @@ CPU MHz:             ${template.cpu.speed}`;
                 logger.info('测试', 'SystemInformation库未安装，跳过测试');
             }
 
-            // 测试网络拦截
+            // 测试VSCode拦截
+            try {
+                logger.info('测试', '测试VSCode环境变量拦截');
+                const mockVSCode = this.vscodeInterceptor.createMockVSCode();
+                logger.info('测试', `VSCode版本: ${mockVSCode.version}`);
+                logger.info('测试', `机器ID: ${mockVSCode.env.machineId.substr(0, 8)}...`);
+                logger.info('测试', `遥测状态: ${mockVSCode.env.isTelemetryEnabled}`);
+                logger.info('测试', 'VSCode拦截测试完成');
+            } catch (e) {
+                logger.info('测试', 'VSCode拦截测试跳过');
+            }
+
+            // 测试网络请求处理
             logger.info('测试', '模拟遥测请求拦截');
             fetch('https://api.segment.io/v1/batch', {
                 method: 'POST',
                 body: JSON.stringify({test: 'data'})
             }).catch(() => {
-                logger.info('测试', '网络拦截测试完成');
+                logger.info('测试', '网络请求测试完成');
             });
 
             logger.info('测试', '完整拦截功能测试完成，请查看上方日志');
@@ -2003,6 +2227,7 @@ CPU MHz:             ${template.cpu.speed}`;
   ✅ 40+ 硬件数据点完全伪造
   ✅ 智能网络策略（分层决策）
   ✅ SystemInformation库完全拦截
+  ✅ VSCode环境变量隐私保护
   ✅ 文件系统隐私保护
   ✅ 身份信息一致性保证
             `);

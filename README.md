@@ -72,15 +72,16 @@ try {
 重启VSCode后，应该看到拦截器启动信息：
 
 ```
-🚀 正在加载 Augment Code Extension 拦截器 v3.6...
-✅ 拦截器初始化完成
-🛡️ Augment Code Extension 拦截器 v3.6
+🚀 正在加载 Augment Code Extension 完整拦截器 ...
+============================================================
+🛡️ Augment Code Extension 完整拦截器 v1.0.0
+============================================================
 状态: running
 身份ID: 6beca83f...
 硬件模板: intel_desktop
 主机名: DESKTOP-2e872b50
 用户名: user-2e81352d
-🚀 隐私保护功能已激活！
+============================================================
 ```
 
 ## 🔍 验证安装
@@ -90,9 +91,8 @@ try {
 重启VSCode后，按 `Ctrl+Shift+I` 打开开发者工具，在Console中查看是否有拦截器启动日志：
 
 ```
-[Extension Host] 🚀 正在加载 Augment Code Extension 拦截器 v3.6...
-[Extension Host] ✅ 拦截器初始化完成
-[Extension Host] 🛡️ Augment Code Extension 拦截器 v3.6
+[Extension Host] 🚀 正在加载 Augment Code Extension 完整拦截器 ...
+[Extension Host] 🛡️ [拦截器管理] 完整拦截器初始化完成
 ```
 
 ### 观察拦截日志
@@ -100,9 +100,9 @@ try {
 使用Augment Code功能时，应该能看到拦截日志：
 
 ```
-[Extension Host] ✅ [网络拦截] POST https://api.augmentcode.com/... - 必要功能已放行
-[Extension Host] 🚫 [网络拦截] POST https://api.segment.io/... - 遥测数据已拦截
-[Extension Host] 🔄 [OS拦截] hostname() 调用已拦截 - 伪造: DESKTOP-abc123
+[Extension Host] ✅ [网络请求] POST https://api.augmentcode.com/... - 必要功能已放行
+[Extension Host] 🚫 [网络请求] POST https://api.segment.io/... - 遥测数据已拦截
+[Extension Host] 🔄 [系统信息] hostname() 调用 - 伪造: DESKTOP-abc123
 ```
 
 ## 🔄 重置身份
