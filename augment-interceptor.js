@@ -1,7 +1,6 @@
 /**
  * Augment Code Extension 完整拦截器
  * 
- * 整合所有v3.x功能的单文件版本：
  * ✅ 40+数据点身份配置文件系统
  * ✅ 智能网络策略（分层决策）
  * ✅ 完整SystemInformation库拦截
@@ -9,16 +8,102 @@
  * ✅ 文件系统拦截
  * ✅ 性能监控
  * 
- * 版本: v3.6-complete
- * 构建时间: 2025-08-09
  */
 
 (function() {
     'use strict';
 
-    console.log('🚀 正在加载 Augment Code Extension 完整拦截器 v3.6...');
+    // 临时使用console.log，因为logger还未初始化
+    console.log('🚀 正在加载 Augment Code Extension 完整拦截器 ...');
 
-    // ==================== 1. 硬件配置模板 ====================
+    // ==================== 1. 统一日志系统 ====================
+
+    /**
+     * 极简日志管理器 - 专注核心拦截监控功能
+     */
+    class AugmentLogger {
+        constructor() {
+            this.enabled = true;
+        }
+
+        // 简洁格式：emoji + [类别] + 操作 + 详情
+        _formatMessage(emoji, category, action, details = '') {
+            return `${emoji} [${category}] ${action}${details ? ' - ' + details : ''}`;
+        }
+
+        // 核心拦截日志方法
+        intercept(category, action, details = '') {
+            if (this.enabled) {
+                console.log(this._formatMessage('🚫', category, action, details));
+            }
+        }
+
+        allow(category, action, details = '') {
+            if (this.enabled) {
+                console.log(this._formatMessage('✅', category, action, details));
+            }
+        }
+
+        replace(category, action, details = '') {
+            if (this.enabled) {
+                console.log(this._formatMessage('🔄', category, action, details));
+            }
+        }
+
+        query(category, action, details = '') {
+            if (this.enabled) {
+                console.log(this._formatMessage('🔍', category, action, details));
+            }
+        }
+
+        fileOp(category, action, details = '') {
+            if (this.enabled) {
+                console.log(this._formatMessage('📁', category, action, details));
+            }
+        }
+
+        protect(category, action, details = '') {
+            if (this.enabled) {
+                console.log(this._formatMessage('🛡️', category, action, details));
+            }
+        }
+
+        // 基本系统消息方法
+        info(module, message, data = null) {
+            if (this.enabled) {
+                const formatted = `ℹ️ [${module}] ${message}${data ? ' - ' + data : ''}`;
+                console.log(formatted);
+            }
+        }
+
+        warn(module, message, data = null) {
+            if (this.enabled) {
+                const formatted = `⚠️ [${module}] ${message}${data ? ' - ' + data : ''}`;
+                console.warn(formatted);
+            }
+        }
+
+        error(module, message, data = null) {
+            if (this.enabled) {
+                const formatted = `❌ [${module}] ${message}${data ? ' - ' + data : ''}`;
+                console.error(formatted);
+            }
+        }
+
+        // 简单开关控制
+        enable() {
+            this.enabled = true;
+        }
+
+        disable() {
+            this.enabled = false;
+        }
+    }
+
+    // 创建全局日志实例
+    const logger = new AugmentLogger();
+
+    // ==================== 2. 硬件配置模板 ====================
 
     const HARDWARE_TEMPLATES = {
         intel_desktop: {
@@ -237,6 +322,23 @@
                     systemBootTime: Date.now() - Math.floor(Math.random() * 86400000),
                     processStartTime: Date.now() - Math.floor(Math.random() * 3600000),
                     extensionVersion: '0.525.0'
+                },
+
+                // Git配置信息
+                git: {
+                    userEmail: 'user-' + this.generateConsistentUUID(profileSeed + '-user').substr(0, 8) + this.getRandomEmailSuffix(profileSeed),
+                    userName: 'user-' + this.generateConsistentUUID(profileSeed + '-user').substr(0, 8),
+                    defaultRemoteUrl: this.generateRandomGitRepo(profileSeed),
+                    configGlobalUserName: 'user-' + this.generateConsistentUUID(profileSeed + '-user').substr(0, 8),
+                    configGlobalUserEmail: 'user-' + this.generateConsistentUUID(profileSeed + '-user').substr(0, 8) + this.getRandomEmailSuffix(profileSeed)
+                },
+
+                // SSH配置信息
+                ssh: {
+                    privateKey: this.generateFakeSSHPrivateKey(profileSeed),
+                    publicKey: this.generateFakeSSHPublicKey(profileSeed),
+                    knownHosts: this.generateFakeKnownHosts(profileSeed),
+                    config: this.generateFakeSSHConfig(profileSeed)
                 }
             };
         }
@@ -249,6 +351,101 @@
             }
             const hex = Math.abs(hash).toString(16).padStart(12, '0');
             return hex.match(/.{2}/g).join(':').toUpperCase();
+        }
+
+        generateFakeSSHPrivateKey(seed) {
+            const keyId = this.generateConsistentUUID(seed + '-ssh-private').replace(/-/g, '');
+            return `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAlwAAAAdzc2gtcn
+NhAAAAAwEAAQAAAIEA${keyId.substr(0, 32)}AAAB${keyId.substr(32, 16)}
+${keyId.substr(48, 32)}AAAB${keyId.substr(16, 32)}
+-----END OPENSSH PRIVATE KEY-----`;
+        }
+
+        generateFakeSSHPublicKey(seed) {
+            const keyId = this.generateConsistentUUID(seed + '-ssh-public').replace(/-/g, '');
+            const username = 'user-' + this.generateConsistentUUID(seed + '-user').substr(0, 8);
+            const hostname = 'DESKTOP-' + this.generateConsistentUUID(seed + '-host').substr(0, 8);
+            return `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ${keyId.substr(0, 32)}${keyId.substr(32, 32)} ${username}@${hostname}`;
+        }
+
+        generateFakeKnownHosts(seed) {
+            const hostKey = this.generateConsistentUUID(seed + '-known-hosts').replace(/-/g, '');
+            return `github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ${hostKey.substr(0, 32)}${hostKey.substr(32, 32)}
+gitlab.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ${hostKey.substr(16, 32)}${hostKey.substr(48, 16)}`;
+        }
+
+        generateFakeSSHConfig(seed) {
+            const username = 'user-' + this.generateConsistentUUID(seed + '-user').substr(0, 8);
+            return `Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_rsa
+
+Host gitlab.com
+    HostName gitlab.com
+    User git
+    IdentityFile ~/.ssh/id_rsa
+
+Host *
+    User ${username}
+    ServerAliveInterval 60
+    ServerAliveCountMax 3`;
+        }
+
+        getRandomEmailSuffix(seed) {
+            const emailProviders = [
+                '@gmail.com',
+                '@outlook.com',
+                '@hotmail.com',
+                '@yahoo.com',
+                '@icloud.com',
+                '@protonmail.com',
+                '@live.com'
+            ];
+
+            let hash = 0;
+            for (let i = 0; i < seed.length; i++) {
+                hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+                hash = hash & hash;
+            }
+            const index = Math.abs(hash) % emailProviders.length;
+            return emailProviders[index];
+        }
+
+        generateRandomGitRepo(seed) {
+            const username = 'user-' + this.generateConsistentUUID(seed + '-user').substr(0, 8);
+            const repoName = this.generateRandomRepoName(seed);
+            return `https://github.com/${username}/${repoName}.git`;
+        }
+
+        generateRandomRepoName(seed) {
+            const repoWords = [
+                'project', 'app', 'tool', 'lib', 'framework', 'service', 'api', 'client',
+                'server', 'web', 'mobile', 'desktop', 'game', 'bot', 'script', 'utils',
+                'helper', 'manager', 'handler', 'processor', 'generator', 'parser',
+                'analyzer', 'monitor', 'tracker', 'logger', 'config', 'setup'
+            ];
+
+            const adjectives = [
+                'awesome', 'simple', 'smart', 'fast', 'easy', 'cool', 'new', 'modern',
+                'clean', 'light', 'dark', 'blue', 'green', 'red', 'mini', 'micro',
+                'super', 'ultra', 'pro', 'plus', 'max', 'core', 'base', 'main'
+            ];
+
+            let hash1 = 0;
+            let hash2 = 0;
+            for (let i = 0; i < seed.length; i++) {
+                hash1 = ((hash1 << 5) - hash1) + seed.charCodeAt(i);
+                hash2 = ((hash2 << 3) - hash2) + seed.charCodeAt(i);
+                hash1 = hash1 & hash1;
+                hash2 = hash2 & hash2;
+            }
+
+            const adjIndex = Math.abs(hash1) % adjectives.length;
+            const wordIndex = Math.abs(hash2) % repoWords.length;
+
+            return `${adjectives[adjIndex]}-${repoWords[wordIndex]}`;
         }
 
         getOSRelease() {
@@ -276,27 +473,20 @@
                     // 文件存在，加载现有身份
                     const stored = fs.readFileSync(this.configFile, 'utf8');
                     this.currentProfile = JSON.parse(stored);
-                    console.log('[身份管理器] ✅ 已加载现有身份配置文件');
-                    console.log('[身份管理器] 📁 配置文件:', this.configFile);
-                    console.log('[身份管理器] 🆔 身份ID:', this.currentProfile.identifiers.machineId.substr(0, 8) + '...');
-                    console.log('[身份管理器] 🏠 主机名:', this.currentProfile.system.hostname);
-                    console.log('[身份管理器] 👤 用户名:', this.currentProfile.system.username);
+                    logger.protect('身份管理', '已加载现有身份配置文件',
+                        `ID: ${this.currentProfile.identifiers.machineId.substr(0, 8)}... | ${this.currentProfile.system.hostname}`);
                     return;
                 }
             } catch (e) {
-                console.warn('[身份管理器] ⚠️ 加载配置失败，将生成新身份:', e.message);
+                logger.warn('Identity', '加载配置失败，将生成新身份', e.message);
             }
 
             // 文件不存在，生成新身份
-            console.log('[身份管理器] 📄 配置文件不存在，正在生成新身份...');
+            logger.protect('身份管理', '正在生成新身份配置文件');
             this.currentProfile = this.generateProfile();
             this.saveProfile();
-            console.log('[身份管理器] ✅ 已生成新的身份配置文件');
-            console.log('[身份管理器] 📁 配置文件:', this.configFile);
-            console.log('[身份管理器] 🆔 新身份ID:', this.currentProfile.identifiers.machineId.substr(0, 8) + '...');
-            console.log('[身份管理器] 🏠 新主机名:', this.currentProfile.system.hostname);
-            console.log('[身份管理器] 👤 新用户名:', this.currentProfile.system.username);
-            console.log('[身份管理器] 💡 提示: 删除配置文件可重置身份');
+            logger.protect('身份管理', '已生成新的身份配置文件',
+                `ID: ${this.currentProfile.identifiers.machineId.substr(0, 8)}... | ${this.currentProfile.system.hostname}`);
         }
 
         saveProfile() {
@@ -310,11 +500,9 @@
 
                 // 保存配置文件
                 fs.writeFileSync(this.configFile, JSON.stringify(this.currentProfile, null, 2));
-                console.log('[身份管理器] 💾 配置已保存');
+                logger.protect('身份管理', '配置已保存');
             } catch (e) {
-                console.warn('[身份管理器] ❌ 保存配置失败:', e.message);
-                console.warn('[身份管理器] 📁 配置目录:', this.configDir);
-                console.warn('[身份管理器] 📄 配置文件:', this.configFile);
+                logger.error('Identity', '保存配置失败', e.message);
             }
         }
 
@@ -323,14 +511,11 @@
         }
 
         resetProfile() {
-            console.log('[身份管理器] 🔄 正在重置身份...');
+            logger.protect('身份管理', '正在重置身份');
             this.currentProfile = this.generateProfile();
             this.saveProfile();
-            console.log('[身份管理器] ✅ 身份已重置');
-            console.log('[身份管理器] 🆔 新身份ID:', this.currentProfile.identifiers.machineId.substr(0, 8) + '...');
-            console.log('[身份管理器] 🏠 新主机名:', this.currentProfile.system.hostname);
-            console.log('[身份管理器] 👤 新用户名:', this.currentProfile.system.username);
-            console.log('[身份管理器] 💡 提示: 也可以删除配置文件来重置身份');
+            logger.protect('身份管理', '身份已重置',
+                `新ID: ${this.currentProfile.identifiers.machineId.substr(0, 8)}... | ${this.currentProfile.system.hostname}`);
             return this.currentProfile;
         }
     }
@@ -437,14 +622,33 @@
                 [process.env.USER || '']: this.profile.system.username
             };
 
+            let replacementCount = 0;
+            const replacementDetails = [];
+
             // 执行替换
             Object.entries(replacements).forEach(([real, fake]) => {
-                if (real && fake) {
+                if (real && fake && fakeData.includes(real)) {
                     fakeData = fakeData.replace(new RegExp(real, 'g'), fake);
+                    replacementCount++;
+                    replacementDetails.push(`${this.getReplacementType(real)}: ${real.substr(0, 8)}... → ${fake.substr(0, 8)}...`);
                 }
             });
 
+            // 只在有替换时记录日志
+            if (replacementCount > 0) {
+                logger.replace('身份替换', `${replacementCount}项身份信息已替换`, replacementDetails.join(', '));
+            }
+
             return typeof data === 'object' ? JSON.parse(fakeData) : fakeData;
+        }
+
+        getReplacementType(realValue) {
+            const os = require('os');
+            if (realValue === os.hostname()) return 'hostname';
+            if (realValue === os.userInfo().username) return 'username';
+            if (realValue === process.env.USERNAME) return 'env_username';
+            if (realValue === process.env.USER) return 'env_user';
+            return 'unknown';
         }
     }
 
@@ -454,6 +658,8 @@
         constructor(identityProfile) {
             this.profile = identityProfile;
             this.selectedTemplate = this.selectTemplate();
+            logger.protect('硬件伪造', '硬件配置生成器初始化完成',
+                `模板: ${this.getTemplateName()}`);
         }
 
         selectTemplate() {
@@ -465,12 +671,21 @@
                 hash = hash & hash;
             }
             const index = Math.abs(hash) % templates.length;
-            return HARDWARE_TEMPLATES[templates[index]];
+            const selectedTemplateName = templates[index];
+
+            logger.protect('硬件伪造', '硬件模板选择', selectedTemplateName);
+
+            return HARDWARE_TEMPLATES[selectedTemplateName];
+        }
+
+        getTemplateName() {
+            return Object.keys(HARDWARE_TEMPLATES).find(key =>
+                HARDWARE_TEMPLATES[key] === this.selectedTemplate) || 'unknown';
         }
 
         generateSystemInfo() {
             const template = this.selectedTemplate;
-            return {
+            const systemInfo = {
                 manufacturer: template.baseboard.manufacturer,
                 model: template.baseboard.model,
                 version: template.baseboard.version,
@@ -481,17 +696,25 @@
                 virtual: false,
                 virtualHost: ''
             };
+
+            logger.query('系统信息', 'system() 调用', `${systemInfo.manufacturer} ${systemInfo.model}`);
+
+            return systemInfo;
         }
 
         generateBiosInfo() {
             const template = this.selectedTemplate;
-            return {
+            const biosInfo = {
                 vendor: template.bios.vendor,
                 version: template.bios.version,
                 releaseDate: template.bios.releaseDate,
                 revision: template.bios.revision,
                 serial: this.profile.hardware.biosInfo.serial
             };
+
+            logger.query('系统信息', 'bios() 调用', `${biosInfo.vendor} ${biosInfo.version}`);
+
+            return biosInfo;
         }
 
         generateBaseboardInfo() {
@@ -519,7 +742,7 @@
 
         generateCpuInfo() {
             const template = this.selectedTemplate.cpu;
-            return {
+            const cpuInfo = {
                 manufacturer: template.manufacturer,
                 brand: template.brand,
                 vendor: template.manufacturer,
@@ -545,16 +768,22 @@
                     l3: 16777216
                 }
             };
+
+            logger.query('系统信息', 'cpu() 调用', `${cpuInfo.manufacturer} ${cpuInfo.cores}核 ${cpuInfo.speed}GHz`);
+
+            return cpuInfo;
         }
 
         generateCpuFlags() {
-            return this.selectedTemplate.cpu.flags;
+            const flags = this.selectedTemplate.cpu.flags;
+            logger.query('系统信息', 'cpuFlags() 调用', `${flags.split(' ').length}个CPU标志`);
+            return flags;
         }
 
         generateMemoryInfo() {
             const template = this.selectedTemplate.memory;
             const used = Math.floor(template.total * (0.3 + Math.random() * 0.4));
-            return {
+            const memoryInfo = {
                 total: template.total,
                 free: template.total - used,
                 used: used,
@@ -568,6 +797,12 @@
                 swapused: 0,
                 swapfree: template.total
             };
+
+            const totalGB = Math.round(memoryInfo.total / 1024 / 1024 / 1024);
+            const usagePercent = Math.round((memoryInfo.used / memoryInfo.total) * 100);
+            logger.query('系统信息', 'mem() 调用', `${totalGB}GB内存 ${usagePercent}%使用`);
+
+            return memoryInfo;
         }
 
         generateMemoryLayout() {
@@ -639,15 +874,15 @@
 
                 Module.prototype.require = function(id) {
                     if (id === 'systeminformation') {
-                        console.log('🔍 拦截 systeminformation 库加载');
+                        logger.protect('系统信息', 'systeminformation库加载拦截');
                         return self.createSystemInformationMock();
                     }
                     return originalRequire.apply(this, arguments);
                 };
 
-                console.log('✅ SystemInformation 库拦截已设置');
+                logger.protect('系统信息', 'SystemInformation库拦截器设置完成');
             } catch (e) {
-                console.warn('[SystemInformation拦截器] 设置失败:', e.message);
+                logger.error('SystemInfo', 'SystemInformation拦截器设置失败', { error: e.message });
             }
         }
 
@@ -656,33 +891,33 @@
 
             return {
                 // 系统信息
-                system: (callback) => this.handleCallback(callback, () => self.hardware.generateSystemInfo()),
-                bios: (callback) => this.handleCallback(callback, () => self.hardware.generateBiosInfo()),
-                baseboard: (callback) => this.handleCallback(callback, () => self.hardware.generateBaseboardInfo()),
-                chassis: (callback) => this.handleCallback(callback, () => self.hardware.generateChassisInfo()),
+                system: (callback) => this.handleCallback(callback, () => self.hardware.generateSystemInfo(), 'system'),
+                bios: (callback) => this.handleCallback(callback, () => self.hardware.generateBiosInfo(), 'bios'),
+                baseboard: (callback) => this.handleCallback(callback, () => self.hardware.generateBaseboardInfo(), 'baseboard'),
+                chassis: (callback) => this.handleCallback(callback, () => self.hardware.generateChassisInfo(), 'chassis'),
 
                 // CPU信息
-                cpu: (callback) => this.handleCallback(callback, () => self.hardware.generateCpuInfo()),
-                cpuFlags: (callback) => this.handleCallback(callback, () => self.hardware.generateCpuFlags()),
+                cpu: (callback) => this.handleCallback(callback, () => self.hardware.generateCpuInfo(), 'cpu'),
+                cpuFlags: (callback) => this.handleCallback(callback, () => self.hardware.generateCpuFlags(), 'cpuFlags'),
                 cpuCache: (callback) => this.handleCallback(callback, () => ({
                     l1d: 32768, l1i: 32768, l2: 262144, l3: 16777216
-                })),
+                }), 'cpuCache'),
                 cpuCurrentSpeed: (callback) => this.handleCallback(callback, () => ({
                     avg: self.hardware.selectedTemplate.cpu.speed,
                     min: self.hardware.selectedTemplate.cpu.speedMin,
                     max: self.hardware.selectedTemplate.cpu.speedMax
-                })),
+                }), 'cpuCurrentSpeed'),
                 cpuTemperature: (callback) => this.handleCallback(callback, () => ({
                     main: 45 + Math.floor(Math.random() * 20),
                     cores: Array(self.hardware.selectedTemplate.cpu.cores).fill(0).map(() =>
                         40 + Math.floor(Math.random() * 25)
                     ),
                     max: 85
-                })),
+                }), 'cpuTemperature'),
 
                 // 内存信息
-                mem: (callback) => this.handleCallback(callback, () => self.hardware.generateMemoryInfo()),
-                memLayout: (callback) => this.handleCallback(callback, () => self.hardware.generateMemoryLayout()),
+                mem: (callback) => this.handleCallback(callback, () => self.hardware.generateMemoryInfo(), 'mem'),
+                memLayout: (callback) => this.handleCallback(callback, () => self.hardware.generateMemoryLayout(), 'memLayout'),
 
                 // 存储信息
                 diskLayout: (callback) => this.handleCallback(callback, () => self.hardware.generateDiskLayout()),
@@ -841,8 +1076,9 @@
             };
         }
 
-        handleCallback(callback, dataGenerator) {
+        handleCallback(callback, dataGenerator, apiName = 'unknown') {
             const data = dataGenerator();
+
             if (typeof callback === 'function') {
                 setTimeout(() => callback(data), 0);
                 return;
@@ -860,6 +1096,49 @@
             this.interceptOS();
         }
 
+        generateFakeSSHContent(filePath) {
+            const pathStr = filePath.toString().toLowerCase();
+
+            if (pathStr.includes('id_rsa') && !pathStr.includes('.pub')) {
+                // SSH私钥
+                return this.profile.ssh.privateKey;
+            } else if (pathStr.includes('id_rsa.pub') || pathStr.includes('id_ed25519.pub')) {
+                // SSH公钥
+                return this.profile.ssh.publicKey;
+            } else if (pathStr.includes('known_hosts')) {
+                // known_hosts文件
+                return this.profile.ssh.knownHosts;
+            } else if (pathStr.includes('config')) {
+                // SSH配置文件
+                return this.profile.ssh.config;
+            } else {
+                // 其他SSH相关文件
+                return `# SSH configuration file
+# Generated by Augment Interceptor
+Host *
+    User ${this.profile.system.username}
+    ServerAliveInterval 60`;
+            }
+        }
+
+
+
+        getSSHFileType(filePath) {
+            const pathStr = filePath.toString().toLowerCase();
+
+            if (pathStr.includes('id_rsa') && !pathStr.includes('.pub')) {
+                return '私钥';
+            } else if (pathStr.includes('id_rsa.pub') || pathStr.includes('id_ed25519.pub')) {
+                return '公钥';
+            } else if (pathStr.includes('known_hosts')) {
+                return 'known_hosts';
+            } else if (pathStr.includes('config')) {
+                return '配置文件';
+            } else {
+                return 'SSH文件';
+            }
+        }
+
         interceptFS() {
             try {
                 const Module = require('module');
@@ -874,9 +1153,9 @@
                     return originalRequire.apply(this, arguments);
                 };
 
-                console.log('✅ 文件系统拦截已设置');
+                logger.protect('文件系统', '文件系统拦截已设置');
             } catch (e) {
-                console.warn('[文件系统拦截器] 设置失败:', e.message);
+                logger.error('FileSystem', '文件系统拦截器设置失败', e.message);
             }
         }
 
@@ -888,16 +1167,30 @@
                     // 拦截stat相关方法
                     if (['statSync', 'lstatSync', 'stat', 'lstat'].includes(prop)) {
                         return function(path, ...args) {
+                            const pathStr = path.toString();
                             const result = target[prop].apply(this, arguments);
 
                             // 替换inode信息
                             if (result && typeof result === 'object') {
-                                if (path.includes('home') || path.includes('Users')) {
+                                let inodeReplaced = false;
+                                let replacementType = '';
+
+                                if (pathStr.includes('home') || pathStr.includes('Users')) {
                                     result.ino = self.profile.filesystem.homeDirectoryIno;
-                                } else if (path.includes('userData')) {
+                                    inodeReplaced = true;
+                                    replacementType = 'home目录';
+                                } else if (pathStr.includes('userData')) {
                                     result.ino = self.profile.filesystem.userDataPathIno;
-                                } else if (path.includes('project') || path.includes('workspace')) {
+                                    inodeReplaced = true;
+                                    replacementType = 'userData目录';
+                                } else if (pathStr.includes('project') || pathStr.includes('workspace')) {
                                     result.ino = self.profile.filesystem.projectRootIno;
+                                    inodeReplaced = true;
+                                    replacementType = 'project目录';
+                                }
+
+                                if (inodeReplaced) {
+                                    logger.fileOp('文件系统', `${prop}() inode替换`, `${replacementType}: ${pathStr}`);
                                 }
                             }
 
@@ -912,16 +1205,19 @@
 
                             // 拦截SSH相关文件
                             if (pathStr.includes('.ssh') || pathStr.includes('known_hosts') || pathStr.includes('id_rsa')) {
-                                console.log('🔒 [文件拦截] SSH文件访问已拦截:', pathStr);
+                                const fakeContent = self.generateFakeSSHContent(pathStr);
+                                const fileType = self.getSSHFileType(pathStr);
+                                logger.intercept('文件系统', `SSH文件访问拦截 - 替换为伪造${fileType}`, pathStr);
+
                                 if (prop === 'readFileSync') {
-                                    return Buffer.from('# Fake SSH file\n');
+                                    return Buffer.from(fakeContent);
                                 } else {
                                     const callback = args[args.length - 1];
                                     if (typeof callback === 'function') {
-                                        setTimeout(() => callback(null, Buffer.from('# Fake SSH file\n')), 0);
+                                        setTimeout(() => callback(null, Buffer.from(fakeContent)), 0);
                                         return;
                                     }
-                                    return Promise.resolve(Buffer.from('# Fake SSH file\n'));
+                                    return Promise.resolve(Buffer.from(fakeContent));
                                 }
                             }
 
@@ -948,9 +1244,9 @@
                     return originalRequire.apply(this, arguments);
                 };
 
-                console.log('✅ OS模块拦截已设置');
+                logger.protect('系统信息', 'OS模块拦截已设置');
             } catch (e) {
-                console.warn('[文件系统拦截器] OS拦截设置失败:', e.message);
+                logger.error('FileSystem', 'OS拦截设置失败', e.message);
             }
         }
 
@@ -961,7 +1257,7 @@
                 get(target, prop) {
                     if (prop === 'hostname') {
                         return function() {
-                            console.log(`🔄 [OS拦截] hostname() 调用已拦截 - 伪造: ${self.profile.system.hostname}`);
+                            logger.replace('系统信息', 'hostname() 调用', `伪造: ${self.profile.system.hostname}`);
                             return self.profile.system.hostname;
                         };
                     }
@@ -974,7 +1270,7 @@
                                 username: self.profile.system.username,
                                 homedir: realInfo.homedir.replace(realInfo.username, self.profile.system.username)
                             };
-                            console.log(`🔄 [OS拦截] userInfo() 调用已拦截 - 伪造用户: ${fakeInfo.username}`);
+                            logger.replace('系统信息', 'userInfo() 调用', `伪造用户: ${fakeInfo.username}`);
                             return fakeInfo;
                         };
                     }
@@ -982,6 +1278,353 @@
                     return target[prop];
                 }
             });
+        }
+    }
+
+    // ==================== 6. Child Process 拦截器 ====================
+
+    class ChildProcessInterceptor {
+        constructor(identityProfile, hardwareGenerator) {
+            this.profile = identityProfile;
+            this.hardware = hardwareGenerator;
+            this.setupInterceptor();
+        }
+
+        setupInterceptor() {
+            try {
+                const Module = require('module');
+                const originalRequire = Module.prototype.require;
+                const self = this;
+
+                Module.prototype.require = function(id) {
+                    if (id === 'child_process' || id === 'node:child_process') {
+                        const cp = originalRequire.apply(this, arguments);
+                        return self.createChildProcessProxy(cp);
+                    }
+                    return originalRequire.apply(this, arguments);
+                };
+
+                logger.protect('系统命令', 'Child Process拦截器设置完成');
+            } catch (e) {
+                logger.error('ChildProcess', 'Child Process拦截器设置失败', e.message);
+            }
+        }
+
+        createChildProcessProxy(cp) {
+            const self = this;
+
+            return new Proxy(cp, {
+                get(target, prop) {
+                    if (prop === 'exec') {
+                        return function(command, options, callback) {
+                            const analysis = self.analyzeCommand(command);
+
+                            if (analysis.isHardwareQuery) {
+                                const logMessage = self.getDetailedLogMessage(analysis, command);
+                                logger.intercept('系统命令', `exec() ${logMessage.action}`, logMessage.details);
+
+                                // 处理回调参数
+                                if (typeof options === 'function') {
+                                    callback = options;
+                                    options = {};
+                                }
+
+                                // 生成伪造的输出
+                                const fakeOutput = self.generateFakeOutput(analysis);
+
+                                // 异步返回伪造结果
+                                setTimeout(() => {
+                                    if (callback) {
+                                        callback(null, fakeOutput, '');
+                                    }
+                                }, 10);
+
+                                return;
+                            }
+
+                            // 非硬件查询命令正常执行
+                            return target[prop].apply(this, arguments);
+                        };
+                    }
+
+                    if (prop === 'spawn') {
+                        return function(command, args, options) {
+                            const fullCommand = `${command} ${args ? args.join(' ') : ''}`;
+                            const analysis = self.analyzeCommand(fullCommand);
+
+                            if (analysis.isHardwareQuery) {
+                                const logMessage = self.getDetailedLogMessage(analysis, fullCommand);
+                                logger.intercept('系统命令', `spawn() ${logMessage.action}`, logMessage.details);
+
+                                // 返回模拟的子进程
+                                return self.createMockChildProcess(analysis);
+                            }
+
+                            // 非硬件查询命令正常执行
+                            return target[prop].apply(this, arguments);
+                        };
+                    }
+
+                    return target[prop];
+                }
+            });
+        }
+
+        analyzeCommand(command) {
+            const cmd = command.toLowerCase();
+
+            // Git命令拦截 - 防止用户身份信息泄露
+            if (cmd.includes('git ') || cmd.startsWith('git')) {
+                if (cmd.includes('user.email') || cmd.includes('user.name')) {
+                    return { isHardwareQuery: true, type: 'Git用户信息', command };
+                }
+                if (cmd.includes('remote') || cmd.includes('origin') || cmd.includes('config --get remote')) {
+                    return { isHardwareQuery: true, type: 'Git仓库信息', command };
+                }
+            }
+
+            // Windows systeminfo命令拦截 - 补充Windows系统信息覆盖
+            if (cmd.includes('systeminfo')) {
+                return { isHardwareQuery: true, type: 'Windows系统信息', command };
+            }
+
+            // Windows PowerShell 硬件查询命令
+            if (cmd.includes('get-ciminstance') || cmd.includes('get-wmiobject')) {
+                if (cmd.includes('win32_processor') || cmd.includes('win32_computersystem')) {
+                    return { isHardwareQuery: true, type: 'CPU信息', command };
+                }
+                if (cmd.includes('win32_physicalmemory')) {
+                    return { isHardwareQuery: true, type: '内存信息', command };
+                }
+                if (cmd.includes('win32_diskdrive') || cmd.includes('win32_logicaldisk')) {
+                    return { isHardwareQuery: true, type: '磁盘信息', command };
+                }
+                if (cmd.includes('win32_baseboard') || cmd.includes('win32_bios')) {
+                    return { isHardwareQuery: true, type: '主板/BIOS信息', command };
+                }
+                if (cmd.includes('wmimonitorid')) {
+                    return { isHardwareQuery: true, type: '显示器信息', command };
+                }
+            }
+
+            // Windows Registry 查询
+            if (cmd.includes('reg query') && cmd.includes('hardware')) {
+                return { isHardwareQuery: true, type: '注册表硬件查询', command };
+            }
+
+            // macOS 硬件查询命令
+            if (cmd.includes('ioreg') || cmd.includes('system_profiler')) {
+                return { isHardwareQuery: true, type: 'macOS硬件查询', command };
+            }
+
+            // Linux 硬件查询命令
+            if (cmd.includes('dmidecode') || cmd.includes('lscpu') || cmd.includes('lshw')) {
+                return { isHardwareQuery: true, type: 'Linux硬件查询', command };
+            }
+
+            return { isHardwareQuery: false, type: 'normal', command };
+        }
+
+        generateFakeOutput(analysis) {
+            const template = this.hardware.selectedTemplate;
+
+            switch (analysis.type) {
+                case 'Git用户信息':
+                    return this.generateFakeGitUserInfo(analysis.command);
+                case 'Git仓库信息':
+                    return this.generateFakeGitRepoInfo(analysis.command);
+                case 'Windows系统信息':
+                    return this.generateFakeWindowsSystemInfo();
+                case 'macOS硬件查询':
+                    return this.generateFakeMacOSOutput(analysis.command);
+                case 'Linux硬件查询':
+                    return this.generateFakeLinuxOutput();
+                case 'CPU信息':
+                    return this.generateFakeCPUOutput(template);
+                case '内存信息':
+                    return this.generateFakeMemoryOutput(template);
+                case '磁盘信息':
+                    return this.generateFakeDiskOutput(template);
+                case '主板/BIOS信息':
+                    return this.generateFakeBaseboardOutput(template);
+                case '显示器信息':
+                    return this.generateFakeMonitorOutput(template);
+                case '注册表硬件查询':
+                    return this.generateFakeRegistryOutput(template);
+                default:
+                    return '';
+            }
+        }
+
+        generateFakeCPUOutput(template) {
+            return `Name                      : ${template.cpu.brand}
+Manufacturer              : ${template.cpu.manufacturer}
+MaxClockSpeed             : ${template.cpu.speed}
+NumberOfCores             : ${template.cpu.cores}
+NumberOfLogicalProcessors : ${template.cpu.cores * 2}
+L2CacheSize               : 1024
+L3CacheSize               : 8192`;
+        }
+
+        generateFakeMemoryOutput(template) {
+            const memSerial = this.hardware.generateConsistentSerial('memory');
+            const memModule = template.memory.modules[0] || {};
+            return `Capacity          : ${template.memory.total}
+Speed             : ${memModule.clockSpeed || 3200}
+FormFactor        : 8
+Manufacturer      : ${memModule.manufacturer || 'Samsung'}
+PartNumber        : M471A2K43DB1-CWE
+SerialNumber      : ${memSerial}`;
+        }
+
+        generateFakeDiskOutput(template) {
+            const diskSerial = this.hardware.generateConsistentSerial('disk');
+            return `Caption     : Samsung SSD 980 PRO 1TB
+Size        : 1000204886016
+SerialNumber: ${diskSerial}
+InterfaceType: SATA`;
+        }
+
+        generateFakeBaseboardOutput(template) {
+            return `Manufacturer: ${template.baseboard.manufacturer}
+Model       : ${template.baseboard.model}
+Version     : ${template.baseboard.version}
+SerialNumber: ${this.profile.hardware.baseboardInfo.serial}`;
+        }
+
+        generateFakeMonitorOutput(template) {
+            const displaySerial = this.hardware.generateConsistentSerial('display');
+            return `ManufacturerName: ${template.display?.manufacturer || 'Dell'}
+ProductCodeID   : ${template.display?.model || 'U2720Q'}
+UserFriendlyName: ${template.display?.name || 'Dell U2720Q'}
+SerialNumberID  : ${displaySerial}`;
+        }
+
+        generateFakeRegistryOutput(template) {
+            return `FeatureSet    REG_DWORD    0x12345678
+ProcessorNameString    REG_SZ    ${template.cpu.brand}`;
+        }
+
+        createMockChildProcess(analysis) {
+            const fakeOutput = this.generateFakeOutput(analysis);
+
+            return {
+                stdout: {
+                    on: (event, callback) => {
+                        if (event === 'data') {
+                            setTimeout(() => callback(Buffer.from(fakeOutput)), 10);
+                        }
+                    },
+                    pipe: () => {}
+                },
+                stderr: {
+                    on: () => {},
+                    pipe: () => {}
+                },
+                on: (event, callback) => {
+                    if (event === 'close' || event === 'exit') {
+                        setTimeout(() => callback(0), 20);
+                    }
+                },
+                kill: () => {}
+            };
+        }
+
+        // 新增的伪造数据生成方法
+        generateFakeGitUserInfo(command) {
+            const cmd = command.toLowerCase();
+            if (cmd.includes('user.email')) {
+                return this.profile.git.userEmail;
+            } else if (cmd.includes('user.name')) {
+                return this.profile.git.userName;
+            }
+            return '';
+        }
+
+        generateFakeGitRepoInfo(command) {
+            const cmd = command.toLowerCase();
+            if (cmd.includes('remote') || cmd.includes('origin')) {
+                return this.profile.git.defaultRemoteUrl;
+            }
+            return '';
+        }
+
+        generateFakeWindowsSystemInfo() {
+            const template = this.hardware.selectedTemplate;
+            return `Host Name:                 ${this.profile.system.hostname}
+OS Name:                   Microsoft Windows 11 Pro
+OS Version:                10.0.22631 N/A Build 22631
+OS Manufacturer:           Microsoft Corporation
+OS Configuration:          Standalone Workstation
+System Manufacturer:       ${template.manufacturer}
+System Model:              ${template.model}
+System Type:               x64-based PC
+Processor(s):              1 Processor(s) Installed.
+                           [01]: ${template.cpu.brand}
+Total Physical Memory:     ${Math.round(template.memory.total / 1024 / 1024 / 1024)} GB`;
+        }
+
+        generateFakeMacOSOutput(command) {
+            const cmd = command.toLowerCase();
+            if (cmd.includes('ioreg')) {
+                const fakeUUID = this.profile.identifiers.machineId;
+                const fakeSerial = this.hardware.generateConsistentSerial('mac');
+                return `+-o Root  <class IORegistryEntry, id 0x100000100, retain 4>
+  +-o MacBookPro18,1  <class IOPlatformExpertDevice, id 0x100000110, registered, matched, active, busy 0 (1 ms), retain 9>
+    {
+      "IOPlatformUUID" = "${fakeUUID}"
+      "IOPlatformSerialNumber" = "${fakeSerial}"
+      "model" = <"MacBookPro18,1">
+    }`;
+            }
+            return '';
+        }
+
+        generateFakeLinuxOutput() {
+            const template = this.hardware.selectedTemplate;
+            return `Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+CPU(s):              ${template.cpu.cores}
+Model name:          ${template.cpu.brand}
+CPU MHz:             ${template.cpu.speed}`;
+        }
+
+        getDetailedLogMessage(analysis, command) {
+            const shortCommand = command.length > 50 ? command.substring(0, 50) + '...' : command;
+
+            switch (analysis.type) {
+                case 'Git用户信息':
+                    return {
+                        action: 'Git用户信息拦截 - 返回伪造身份',
+                        details: `${shortCommand} → 返回: ${this.profile.git.userName}/${this.profile.git.userEmail}`
+                    };
+                case 'Git仓库信息':
+                    return {
+                        action: 'Git仓库信息拦截 - 返回伪造仓库',
+                        details: `${shortCommand} → 返回: ${this.profile.git.defaultRemoteUrl}`
+                    };
+                case 'macOS硬件查询':
+                    return {
+                        action: 'macOS硬件查询拦截 - 返回伪造UUID',
+                        details: `${shortCommand} → 返回伪造IOPlatformUUID: ${this.profile.identifiers.machineId.substr(0, 8)}...`
+                    };
+                case 'Windows系统信息':
+                    return {
+                        action: 'Windows系统信息拦截 - 返回伪造配置',
+                        details: `${shortCommand} → 返回伪造主机名: ${this.profile.system.hostname}`
+                    };
+                case 'Linux硬件查询':
+                    return {
+                        action: 'Linux硬件查询拦截 - 返回伪造硬件',
+                        details: `${shortCommand} → 返回伪造CPU信息`
+                    };
+                default:
+                    return {
+                        action: '硬件查询拦截',
+                        details: `${analysis.type}: ${shortCommand}`
+                    };
+            }
         }
     }
 
@@ -1017,7 +1660,7 @@
                     case 'INTERCEPT':
                         self.stats.intercepted++;
                         self.stats.total++;
-                        console.log(`🚫 [网络拦截] ${method} ${urlString} - 遥测数据已拦截`);
+                        logger.intercept('网络拦截', `${method} ${urlString}`, '遥测数据已拦截');
                         return Promise.resolve({
                             ok: true,
                             status: 200,
@@ -1036,19 +1679,19 @@
                             self.replaceHeaderIdentity(newOptions.headers);
                         }
 
-                        console.log(`🔄 [网络拦截] ${method} ${urlString} - 身份信息已替换`);
+                        logger.replace('网络拦截', `${method} ${urlString}`, '身份信息已替换');
                         return originalFetch.call(this, url, newOptions);
 
                     case 'ALLOW':
                     default:
                         self.stats.allowed++;
                         self.stats.total++;
-                        console.log(`✅ [网络拦截] ${method} ${urlString} - 必要功能已放行`);
+                        logger.allow('网络拦截', `${method} ${urlString}`, '必要功能已放行');
                         return originalFetch.apply(this, arguments);
                 }
             };
 
-            console.log('✅ Fetch API拦截已设置');
+            logger.protect('网络拦截', 'Fetch API拦截已设置');
         }
 
         interceptXHR() {
@@ -1075,7 +1718,7 @@
                         case 'INTERCEPT':
                             self.stats.intercepted++;
                             self.stats.total++;
-                            console.log(`🚫 [XHR拦截] ${this._method} ${this._url} - 遥测数据已拦截`);
+                            logger.intercept('网络拦截', `${this._method} ${this._url}`, '遥测数据已拦截');
 
                             setTimeout(() => {
                                 Object.defineProperty(this, 'readyState', { value: 4, writable: false });
@@ -1089,14 +1732,14 @@
                             self.stats.replaced++;
                             self.stats.total++;
                             const fakeData = self.strategy.replaceWithFakeIdentity(data);
-                            console.log(`🔄 [XHR拦截] ${this._method} ${this._url} - 身份信息已替换`);
+                            logger.replace('网络拦截', `${this._method} ${this._url}`, '身份信息已替换');
                             return originalSend.call(this, fakeData);
 
                         case 'ALLOW':
                         default:
                             self.stats.allowed++;
                             self.stats.total++;
-                            console.log(`✅ [XHR拦截] ${this._method} ${this._url} - 必要功能已放行`);
+                            logger.allow('网络拦截', `${this._method} ${this._url}`, '必要功能已放行');
                             return originalSend.apply(this, arguments);
                     }
                 };
@@ -1106,7 +1749,7 @@
 
             // 保持原型链
             XMLHttpRequest.prototype = originalXHR.prototype;
-            console.log('✅ XMLHttpRequest拦截已设置');
+            logger.protect('网络拦截', 'XMLHttpRequest拦截已设置');
         }
 
         replaceHeaderIdentity(headers) {
@@ -1121,7 +1764,7 @@
         initializeAll() {
             this.interceptFetch();
             this.interceptXHR();
-            console.log('✅ 网络拦截器初始化完成');
+            logger.protect('网络拦截', '网络拦截器初始化完成');
         }
 
         getStats() {
@@ -1142,7 +1785,7 @@
 
         async initialize() {
             try {
-                console.log('[完整拦截器] 开始初始化...');
+                logger.protect('拦截器管理', '开始初始化完整拦截器');
 
                 // 1. 初始化身份管理器
                 this.identityManager = new IdentityProfileManager();
@@ -1156,23 +1799,26 @@
 
                 // 4. 初始化各种拦截器
                 this.systemInfoInterceptor = new SystemInformationInterceptor(this.currentProfile, this.hardwareGenerator);
+                this.childProcessInterceptor = new ChildProcessInterceptor(this.currentProfile, this.hardwareGenerator);
+                // 注意：不再初始化EventReporterInterceptor，让Reporter正常工作以避免账号封禁
+                // this.eventReporterInterceptor = new EventReporterInterceptor(this.currentProfile);
                 this.fileSystemInterceptor = new FileSystemInterceptor(this.currentProfile);
                 this.networkInterceptor = new NetworkInterceptor(this.currentProfile, this.networkStrategy);
 
                 this.status = 'running';
-                console.log('✅ 完整拦截器初始化完成');
+                logger.protect('拦截器管理', '完整拦截器初始化完成');
 
                 this.printStatus();
 
             } catch (error) {
                 this.status = 'error';
-                console.error('❌ 完整拦截器初始化失败:', error.message);
+                logger.error('Main', '完整拦截器初始化失败', error.message);
             }
         }
 
         printStatus() {
-            console.log('\n' + '='.repeat(60));
-            console.log('🛡️ Augment Code Extension 完整拦截器 v3.6');
+            console.log('='.repeat(60));
+            console.log('🛡️ Augment Code Extension 完整拦截器');
             console.log('='.repeat(60));
             console.log(`状态: ${this.status}`);
             console.log(`身份ID: ${this.currentProfile.identifiers.machineId.substr(0, 8)}...`);
@@ -1207,6 +1853,8 @@
                     hardwareGenerator: !!this.hardwareGenerator,
                     networkStrategy: !!this.networkStrategy,
                     systemInfoInterceptor: !!this.systemInfoInterceptor,
+                    childProcessInterceptor: !!this.childProcessInterceptor,
+                    // eventReporterInterceptor: 已禁用，让Reporter正常工作避免账号封禁
                     fileSystemInterceptor: !!this.fileSystemInterceptor,
                     networkInterceptor: !!this.networkInterceptor
                 }
@@ -1230,13 +1878,13 @@
             if (this.identityManager) {
                 const newProfile = this.identityManager.resetProfile();
                 this.currentProfile = newProfile;
-                console.log('[完整拦截器] 身份已重置，新ID:', newProfile.identifiers.machineId.substr(0, 8) + '...');
+                logger.protect('拦截器管理', '身份已重置', `新ID: ${newProfile.identifiers.machineId.substr(0, 8)}...`);
                 return newProfile;
             }
         }
 
         restart() {
-            console.log('[完整拦截器] 正在重启...');
+            logger.protect('拦截器管理', '正在重启拦截器');
             this.status = 'restarting';
             setTimeout(() => {
                 this.initialize();
@@ -1244,7 +1892,7 @@
         }
 
         shutdown() {
-            console.log('[完整拦截器] 正在关闭...');
+            logger.protect('拦截器管理', '正在关闭拦截器');
             this.status = 'shutdown';
         }
     }
@@ -1280,53 +1928,67 @@
         // 工具方法
         resetIdentity: () => completeManager.resetIdentity(),
 
+        // 日志控制方法
+        enableLog: () => {
+            logger.enable();
+            logger.info('Logger', '日志已启用');
+        },
+
+        disableLog: () => {
+            logger.disable();
+        },
+
         // 测试方法
         test: () => {
-            console.log('🧪 [测试] 开始完整拦截功能测试...');
+            logger.info('测试', '开始完整拦截功能测试');
 
             // 测试系统信息拦截
             try {
                 const os = require('os');
-                console.log('🧪 [测试] hostname:', os.hostname());
-                console.log('🧪 [测试] userInfo:', os.userInfo().username);
+                logger.info('测试', 'hostname测试', os.hostname());
+                logger.info('测试', 'userInfo测试', os.userInfo().username);
             } catch (e) {
-                console.log('🧪 [测试] OS拦截测试失败:', e.message);
+                logger.error('测试', 'OS拦截测试失败', e.message);
             }
 
             // 测试SystemInformation拦截
             try {
                 const si = require('systeminformation');
                 si.system().then(data => {
-                    console.log('🧪 [测试] SystemInformation拦截成功:', data.manufacturer);
+                    logger.info('测试', 'SystemInformation拦截成功', data.manufacturer);
                 }).catch(() => {
-                    console.log('🧪 [测试] SystemInformation库未安装，跳过测试');
+                    logger.info('测试', 'SystemInformation库未安装，跳过测试');
                 });
             } catch (e) {
-                console.log('🧪 [测试] SystemInformation库未安装，跳过测试');
+                logger.info('测试', 'SystemInformation库未安装，跳过测试');
             }
 
             // 测试网络拦截
-            console.log('🧪 [测试] 模拟遥测请求拦截...');
+            logger.info('测试', '模拟遥测请求拦截');
             fetch('https://api.segment.io/v1/batch', {
                 method: 'POST',
                 body: JSON.stringify({test: 'data'})
             }).catch(() => {
-                console.log('🧪 [测试] 网络拦截测试完成');
+                logger.info('测试', '网络拦截测试完成');
             });
 
-            console.log('🧪 [测试] 完整拦截功能测试完成，请查看上方日志');
+            logger.info('测试', '完整拦截功能测试完成，请查看上方日志');
         },
 
         // 帮助信息
         help: () => {
             console.log(`
-🛡️ Augment Code 完整拦截器 v3.6 - 可用命令:
+🛡️ Augment Code 完整拦截器  - 可用命令:
 
 📊 状态查询:
   AugmentCompleteInterceptor.getStatus()      - 获取拦截器状态
   AugmentCompleteInterceptor.getStats()       - 获取拦截统计
   AugmentCompleteInterceptor.getProfile()     - 获取身份配置文件
   AugmentCompleteInterceptor.getHardwareInfo() - 获取硬件信息
+
+📝 日志控制:
+  AugmentCompleteInterceptor.enableLog()             - 启用日志输出
+  AugmentCompleteInterceptor.disableLog()            - 禁用日志输出
 
 🧪 测试功能:
   AugmentCompleteInterceptor.test()           - 测试拦截功能
@@ -1362,6 +2024,8 @@
         module.exports = AugmentCompleteInterceptor;
     }
 
-    console.log('🎉 Augment Code Extension 完整拦截器 v3.6 加载完成！');
+    // 使用新的日志系统记录加载完成
+    logger.info('Main', 'Augment Code Extension 完整拦截器  加载完成！');
+    logger.info('Main', '日志系统已启用，可使用 AugmentCompleteInterceptor.help() 查看可用命令');
 
 })();
